@@ -1,6 +1,5 @@
-#include <iostream>
+#include <cstdio>
 #include <vector>
-#include <unordered_map>
 #include <algorithm>
 
 using namespace std;
@@ -50,22 +49,21 @@ struct Constraint {
 };
 
 int main() {
-    ios_base::sync_with_stdio(false);
-    cin.tie(NULL);
-    
     int t;
-    cin >> t;
+    scanf("%d", &t);
     
     while (t--) {
         int n;
-        cin >> n;
+        scanf("%d", &n);
         
         vector<Constraint> constraints;
+        constraints.reserve(n);
         vector<int> variables;
+        variables.reserve(n * 2);
         
         for (int k = 0; k < n; k++) {
             int i, j, e;
-            cin >> i >> j >> e;
+            scanf("%d %d %d", &i, &j, &e);
             constraints.push_back({i, j, e});
             variables.push_back(i);
             variables.push_back(j);
@@ -75,18 +73,14 @@ int main() {
         sort(variables.begin(), variables.end());
         variables.erase(unique(variables.begin(), variables.end()), variables.end());
         
-        unordered_map<int, int> compress;
-        for (size_t idx = 0; idx < variables.size(); idx++) {
-            compress[variables[idx]] = static_cast<int>(idx);
-        }
-        
+        // Use binary search instead of hash map for faster lookup
         DSU dsu(variables.size());
         
         // Process equality constraints first
         for (const auto& constraint : constraints) {
             if (constraint.e == 1) {
-                int compressed_i = compress[constraint.i];
-                int compressed_j = compress[constraint.j];
+                int compressed_i = lower_bound(variables.begin(), variables.end(), constraint.i) - variables.begin();
+                int compressed_j = lower_bound(variables.begin(), variables.end(), constraint.j) - variables.begin();
                 dsu.unite(compressed_i, compressed_j);
             }
         }
@@ -95,8 +89,8 @@ int main() {
         bool possible = true;
         for (const auto& constraint : constraints) {
             if (constraint.e == 0) {
-                int compressed_i = compress[constraint.i];
-                int compressed_j = compress[constraint.j];
+                int compressed_i = lower_bound(variables.begin(), variables.end(), constraint.i) - variables.begin();
+                int compressed_j = lower_bound(variables.begin(), variables.end(), constraint.j) - variables.begin();
                 if (dsu.connected(compressed_i, compressed_j)) {
                     possible = false;
                     break;
@@ -104,7 +98,7 @@ int main() {
             }
         }
         
-        cout << (possible ? "YES" : "NO") << "\n";
+        printf("%s\n", possible ? "YES" : "NO");
     }
     
     return 0;
