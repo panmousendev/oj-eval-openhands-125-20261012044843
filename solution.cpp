@@ -7,10 +7,9 @@ using namespace std;
 class DSU {
 private:
     vector<int> parent;
-    vector<int> rank;
     
 public:
-    DSU(int n) : parent(n), rank(n, 0) {
+    DSU(int n) : parent(n) {
         for (int i = 0; i < n; i++) {
             parent[i] = i;
         }
@@ -27,15 +26,8 @@ public:
         int rootX = find(x);
         int rootY = find(y);
         
-        if (rootX == rootY) return;
-        
-        if (rank[rootX] < rank[rootY]) {
-            parent[rootX] = rootY;
-        } else if (rank[rootX] > rank[rootY]) {
+        if (rootX != rootY) {
             parent[rootY] = rootX;
-        } else {
-            parent[rootY] = rootX;
-            rank[rootX]++;
         }
     }
     
@@ -73,24 +65,23 @@ int main() {
         sort(variables.begin(), variables.end());
         variables.erase(unique(variables.begin(), variables.end()), variables.end());
         
-        // Use binary search instead of hash map for faster lookup
         DSU dsu(variables.size());
         
         // Process equality constraints first
-        for (const auto& constraint : constraints) {
-            if (constraint.e == 1) {
-                int compressed_i = lower_bound(variables.begin(), variables.end(), constraint.i) - variables.begin();
-                int compressed_j = lower_bound(variables.begin(), variables.end(), constraint.j) - variables.begin();
+        for (int k = 0; k < n; k++) {
+            if (constraints[k].e == 1) {
+                int compressed_i = lower_bound(variables.begin(), variables.end(), constraints[k].i) - variables.begin();
+                int compressed_j = lower_bound(variables.begin(), variables.end(), constraints[k].j) - variables.begin();
                 dsu.unite(compressed_i, compressed_j);
             }
         }
         
         // Check inequality constraints
         bool possible = true;
-        for (const auto& constraint : constraints) {
-            if (constraint.e == 0) {
-                int compressed_i = lower_bound(variables.begin(), variables.end(), constraint.i) - variables.begin();
-                int compressed_j = lower_bound(variables.begin(), variables.end(), constraint.j) - variables.begin();
+        for (int k = 0; k < n; k++) {
+            if (constraints[k].e == 0) {
+                int compressed_i = lower_bound(variables.begin(), variables.end(), constraints[k].i) - variables.begin();
+                int compressed_j = lower_bound(variables.begin(), variables.end(), constraints[k].j) - variables.begin();
                 if (dsu.connected(compressed_i, compressed_j)) {
                     possible = false;
                     break;
