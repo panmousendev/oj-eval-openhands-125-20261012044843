@@ -1,26 +1,27 @@
 #include <cstdio>
 #include <vector>
 #include <unordered_map>
-#include <algorithm>
 
 using namespace std;
 
 class DSU {
 private:
     vector<int> parent;
+    vector<int> size;
     
 public:
-    DSU(int n) : parent(n) {
+    DSU(int n) : parent(n), size(n, 1) {
         for (int i = 0; i < n; i++) {
             parent[i] = i;
         }
     }
     
     int find(int x) {
-        if (parent[x] != x) {
-            parent[x] = find(parent[x]);
+        while (parent[x] != x) {
+            parent[x] = parent[parent[x]];
+            x = parent[x];
         }
-        return parent[x];
+        return x;
     }
     
     void unite(int x, int y) {
@@ -28,7 +29,13 @@ public:
         int rootY = find(y);
         
         if (rootX != rootY) {
-            parent[rootY] = rootX;
+            if (size[rootX] < size[rootY]) {
+                parent[rootX] = rootY;
+                size[rootY] += size[rootX];
+            } else {
+                parent[rootY] = rootX;
+                size[rootX] += size[rootY];
+            }
         }
     }
     
@@ -64,11 +71,13 @@ int main() {
                 unequal_constraints.push_back({i, j});
             }
             
-            if (id_map.find(i) == id_map.end()) {
+            auto it_i = id_map.find(i);
+            if (it_i == id_map.end()) {
                 id_map[i] = variables.size();
                 variables.push_back(i);
             }
-            if (id_map.find(j) == id_map.end()) {
+            auto it_j = id_map.find(j);
+            if (it_j == id_map.end()) {
                 id_map[j] = variables.size();
                 variables.push_back(j);
             }
