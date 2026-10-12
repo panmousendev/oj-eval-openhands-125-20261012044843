@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <vector>
+#include <unordered_map>
 #include <algorithm>
 
 using namespace std;
@@ -36,10 +37,6 @@ public:
     }
 };
 
-struct Constraint {
-    int i, j, e;
-};
-
 int main() {
     int t;
     scanf("%d", &t);
@@ -48,44 +45,52 @@ int main() {
         int n;
         scanf("%d", &n);
         
-        vector<Constraint> constraints;
-        constraints.reserve(n);
+        vector<pair<int, int>> equal_constraints;
+        vector<pair<int, int>> unequal_constraints;
+        equal_constraints.reserve(n);
+        unequal_constraints.reserve(n);
+        
+        unordered_map<int, int> id_map;
         vector<int> variables;
         variables.reserve(n * 2);
         
         for (int k = 0; k < n; k++) {
             int i, j, e;
             scanf("%d %d %d", &i, &j, &e);
-            constraints.push_back({i, j, e});
-            variables.push_back(i);
-            variables.push_back(j);
+            
+            if (e == 1) {
+                equal_constraints.push_back({i, j});
+            } else {
+                unequal_constraints.push_back({i, j});
+            }
+            
+            if (id_map.find(i) == id_map.end()) {
+                id_map[i] = variables.size();
+                variables.push_back(i);
+            }
+            if (id_map.find(j) == id_map.end()) {
+                id_map[j] = variables.size();
+                variables.push_back(j);
+            }
         }
-        
-        // Coordinate compression
-        sort(variables.begin(), variables.end());
-        variables.erase(unique(variables.begin(), variables.end()), variables.end());
         
         DSU dsu(variables.size());
         
-        // Process equality constraints first
-        for (int k = 0; k < n; k++) {
-            if (constraints[k].e == 1) {
-                int compressed_i = lower_bound(variables.begin(), variables.end(), constraints[k].i) - variables.begin();
-                int compressed_j = lower_bound(variables.begin(), variables.end(), constraints[k].j) - variables.begin();
-                dsu.unite(compressed_i, compressed_j);
-            }
+        // Process equality constraints
+        for (const auto& constraint : equal_constraints) {
+            int id_i = id_map[constraint.first];
+            int id_j = id_map[constraint.second];
+            dsu.unite(id_i, id_j);
         }
         
         // Check inequality constraints
         bool possible = true;
-        for (int k = 0; k < n; k++) {
-            if (constraints[k].e == 0) {
-                int compressed_i = lower_bound(variables.begin(), variables.end(), constraints[k].i) - variables.begin();
-                int compressed_j = lower_bound(variables.begin(), variables.end(), constraints[k].j) - variables.begin();
-                if (dsu.connected(compressed_i, compressed_j)) {
-                    possible = false;
-                    break;
-                }
+        for (const auto& constraint : unequal_constraints) {
+            int id_i = id_map[constraint.first];
+            int id_j = id_map[constraint.second];
+            if (dsu.connected(id_i, id_j)) {
+                possible = false;
+                break;
             }
         }
         
